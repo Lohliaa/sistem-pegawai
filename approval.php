@@ -48,8 +48,8 @@ if (isset($_GET['type']) && isset($_GET['id']) && isset($_GET['action'])) {
                 <h4 class="text-white mb-4">Sistem Pegawai</h4>
                 <a href="index.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-house"></i> Dashboard</a>
                 <?php if ($_SESSION['role'] == 'admin'): ?>
-                <a href="profile_pegawai.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-person-badge"></i> Profile Pegawai</a>
                 <a href="pengajuan_admin.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-file-earmark-text"></i> Manajemen Pengajuan</a>
+                <a href="profile_pegawai.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-person-badge"></i> Profile Pegawai</a>
                 <?php elseif ($_SESSION['role'] == 'staf'): ?>
                 <a href="pengajuan_staf.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-file-earmark-text"></i> Pengajuan</a>
                 <?php elseif ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>

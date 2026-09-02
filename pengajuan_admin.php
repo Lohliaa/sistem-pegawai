@@ -15,16 +15,27 @@ if ($_SESSION['role'] != 'admin') {
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 
+// CEK KOLOM KABID ADA ATAU TIDAK
+$kolom_kabid_ada = true;
+$columns_to_check = ['approved_by_kabid', 'approved_date_kabid', 'catatan_kabid'];
+foreach ($columns_to_check as $col) {
+    $check = $conn->query("SHOW COLUMNS FROM pengajuan LIKE '$col'");
+    if (!$check || $check->num_rows == 0) {
+        $kolom_kabid_ada = false;
+        break;
+    }
+}
+
 // Handle ubah status menjadi processing
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['proses'])) {
     $id = (int)$_POST['id'];
-    
+
     $query = "UPDATE pengajuan SET 
               status='processing',
               processed_by=$user_id,
               processed_date=NOW()
-              WHERE id=$id AND status='approved_kanit'";
-    
+              WHERE id=$id AND (status='approved_kanit' OR status='approved_kabid')";
+
     if ($conn->query($query)) {
         $_SESSION['alert_message'] = "Pengajuan mulai diproses!";
         $_SESSION['alert_icon'] = "success";
@@ -38,14 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['proses'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
     $id = (int)$_POST['id'];
     $catatan = mysqli_real_escape_string($conn, $_POST['catatan'] ?? '');
-    
+
     $query = "UPDATE pengajuan SET 
               status='completed',
               completed_by=$user_id,
               completed_date=NOW(),
               catatan_admin='$catatan'
               WHERE id=$id AND status='processing'";
-    
+
     if ($conn->query($query)) {
         $_SESSION['alert_message'] = "Pengajuan berhasil diselesaikan!";
         $_SESSION['alert_icon'] = "success";
@@ -58,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
 
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Pengajuan - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -73,10 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
             width: 200px;
             left: 0;
         }
+
         .sidebar h4 {
             color: white;
             margin-bottom: 20px;
         }
+
         .sidebar a {
             color: white;
             display: block;
@@ -85,25 +99,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
             border-radius: 5px;
             margin-bottom: 5px;
         }
+
         .sidebar a:hover {
             background: #34495e;
         }
+
         .sidebar a.active {
             background: #3498db;
         }
+
         .main-content {
             margin-left: 200px;
             padding: 30px;
             background: #f4f6f9;
             min-height: 100vh;
         }
+
         .stat-card {
             background: white;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .stat-number {
             font-size: 2rem;
             font-weight: bold;
@@ -111,31 +130,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
         }
     </style>
 </head>
+
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <h4><i class="bi bi-building"></i> SIPS</h4>
-        <a href="index.php"><i class="bi bi-house"></i> Dashboard</a>
+        <div class="brand">
+            <h4><i class="bi bi-building"></i> SIPS</h4>
+            <small class="text-white">Sistem Informasi Pegawai</small>
+        </div>
+        <a href="index.php"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
         <?php if ($_SESSION['role'] == 'admin'): ?>
-        <a href="profile_pegawai.php"><i class="bi bi-people"></i> Profile Pegawai</a>
+            <a href="pengajuan_admin.php" class="active"><i class="bi bi-file-earmark-text"></i> <span>Manajemen Pengajuan</span></a>
+            <a href="profile_pegawai.php"><i class="bi bi-people"></i> <span>Profile Pegawai</span></a>
         <?php endif; ?>
         <?php if ($_SESSION['role'] == 'staf'): ?>
-        <a href="pengajuan_staf.php"><i class="bi bi-file-earmark-text"></i> Pengajuan</a>
+            <a href="pengajuan_staf.php"><i class="bi bi-file-earmark-text"></i> <span>Pengajuan</span></a>
         <?php elseif ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>
-        <a href="persetujuan_kanit.php"><i class="bi bi-check-circle"></i> Persetujuan Pengajuan</a>
-        <?php elseif ($_SESSION['role'] == 'admin'): ?>
-        <a href="pengajuan_admin.php" class="active"><i class="bi bi-file-earmark-text"></i> Manajemen Pengajuan</a>
-        <a href="setup_users.php"><i class="bi bi-people-gear"></i> Manajemen User</a>
+            <a href="persetujuan_kanit.php"><i class="bi bi-check-circle"></i> <span>Persetujuan Pengajuan</span></a>
         <?php endif; ?>
-        <a href="ajuan_mou.php"><i class="bi bi-file-text"></i> <span>Ajuan MoU</span></a>
-        <a href="ajuan_sk.php"><i class="bi bi-file-check"></i> <span>Ajuan SK</span></a>
         <?php if ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>
-        <a href="approval.php"><i class="bi bi-check2-circle"></i> <span>Persetujuan</span></a>
+            <a href="approval.php"><i class="bi bi-check2-circle"></i> <span>Persetujuan</span></a>
         <?php endif; ?>
         <?php if ($_SESSION['role'] == 'admin'): ?>
-        <a href="laporan.php"><i class="bi bi-file-earmark-spreadsheet"></i> <span>Laporan</span></a>
+            <a href="setup_users.php"><i class="bi bi-file-earmark-spreadsheet"></i> <span>Manajemen User</span></a>
         <?php endif; ?>
-        <a href="logout.php" style="margin-top: 20px; color: #e74c3c;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        <a href="logout.php" style="margin-top: 30px; color: #e74c3c;"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></a>
     </div>
 
     <!-- Main Content -->
@@ -149,15 +168,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
 
         <!-- Alert -->
         <?php if (isset($_SESSION['alert_message'])): ?>
-        <div class="alert alert-<?= $_SESSION['alert_icon'] == 'success' ? 'success' : 'danger' ?> alert-dismissible fade show" role="alert">
-            <strong><?= $_SESSION['alert_title'] ?>!</strong> <?= $_SESSION['alert_message'] ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <?php 
-        unset($_SESSION['alert_message']);
-        unset($_SESSION['alert_icon']);
-        unset($_SESSION['alert_title']);
-        endif; 
+            <div class="alert alert-<?= $_SESSION['alert_icon'] == 'success' ? 'success' : 'danger' ?> alert-dismissible fade show" role="alert">
+                <strong><?= $_SESSION['alert_title'] ?>!</strong> <?= $_SESSION['alert_message'] ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php
+            unset($_SESSION['alert_message']);
+            unset($_SESSION['alert_icon']);
+            unset($_SESSION['alert_title']);
+        endif;
         ?>
 
         <!-- Statistik -->
@@ -174,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
                 <div class="stat-card text-center">
                     <div class="stat-label">Disetujui</div>
                     <div class="stat-number" style="color: #27ae60;">
-                        <?= $conn->query("SELECT COUNT(*) as total FROM pengajuan WHERE status='approved_kanit'")->fetch_assoc()['total'] ?>
+                        <?= $conn->query("SELECT COUNT(*) as total FROM pengajuan WHERE status='approved_kanit' OR status='approved_kabid'")->fetch_assoc()['total'] ?>
                     </div>
                 </div>
             </div>
@@ -234,68 +253,85 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
                                 <tbody>
                                     <?php
                                     $no = 1;
-                                    $query = "SELECT p.*, u.username as nama_pengaju, uk.username as nama_kanit FROM pengajuan p 
-                                              LEFT JOIN users u ON p.created_by = u.id
-                                              LEFT JOIN users uk ON p.approved_by_kanit = uk.id
-                                              WHERE p.status='approved_kanit' 
-                                              ORDER BY p.approved_date_kanit DESC";
+                                    if ($kolom_kabid_ada) {
+                                        $query = "SELECT p.*, u.username as nama_pengaju, uk.username as nama_kanit, ukab.username as nama_kabid FROM pengajuan p 
+                                                  LEFT JOIN users u ON p.created_by = u.id
+                                                  LEFT JOIN users uk ON p.approved_by_kanit = uk.id
+                                                  LEFT JOIN users ukab ON p.approved_by_kabid = ukab.id
+                                                  WHERE p.status='approved_kanit' OR p.status='approved_kabid' 
+                                                  ORDER BY COALESCE(p.approved_date_kanit, p.approved_date_kabid) DESC";
+                                    } else {
+                                        $query = "SELECT p.*, u.username as nama_pengaju, uk.username as nama_kanit FROM pengajuan p 
+                                                  LEFT JOIN users u ON p.created_by = u.id
+                                                  LEFT JOIN users uk ON p.approved_by_kanit = uk.id
+                                                  WHERE p.status='approved_kanit' 
+                                                  ORDER BY p.approved_date_kanit DESC";
+                                    }
                                     $result = $conn->query($query);
-                                    
-                                    if ($result->num_rows > 0):
-                                        while($row = $result->fetch_assoc()):
-                                    ?>
-                                    <tr>
-                                        <td><?= $no++ ?></td>
-                                        <td><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></td>
-                                        <td><span class="badge bg-secondary"><?= htmlspecialchars($row['tipe_pengajuan']) ?></span></td>
-                                        <td><?= htmlspecialchars($row['nama']) ?></td>
-                                        <td><?= htmlspecialchars($row['unit']) ?></td>
-                                        <td><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
-                                        <td>
-                                            <small><strong><?= htmlspecialchars($row['nama_kanit'] ?? 'N/A') ?></strong><br>
-                                            <?= $row['approved_date_kanit'] ? date('d/m/Y', strtotime($row['approved_date_kanit'])) : '-' ?><br>
-                                            <em><?= htmlspecialchars($row['catatan_kanit'] ?? '') ?></em></small>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalProses<?= $row['id'] ?>">
-                                                <i class="bi bi-play-circle"></i> Proses
-                                            </button>
 
-                                            <!-- Modal Proses -->
-                                            <div class="modal fade" id="modalProses<?= $row['id'] ?>" tabindex="-1">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header bg-primary text-white">
-                                                            <h5 class="modal-title">Mulai Proses Pengajuan</h5>
-                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    if ($result->num_rows > 0):
+                                        while ($row = $result->fetch_assoc()):
+                                    ?>
+                                            <tr>
+                                                <td><?= $no++ ?></td>
+                                                <td><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></td>
+                                                <td><span class="badge bg-secondary"><?= htmlspecialchars($row['tipe_pengajuan']) ?></span></td>
+                                                <td><?= htmlspecialchars($row['nama']) ?></td>
+                                                <td><?= htmlspecialchars($row['unit']) ?></td>
+                                                <td><?= $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '-' ?></td>
+                                                <td>
+                                                    <?php if ($row['status'] == 'approved_kanit'): ?>
+                                                        <span class="badge bg-info">Disetujui Kanit</span><br>
+                                                        <small><strong><?= htmlspecialchars($row['nama_kanit'] ?? 'N/A') ?></strong><br>
+                                                            <?= $row['approved_date_kanit'] ? date('d/m/Y', strtotime($row['approved_date_kanit'])) : '-' ?><br>
+                                                            <em><?= htmlspecialchars($row['catatan_kanit'] ?? '') ?></em></small>
+                                                    <?php elseif ($kolom_kabid_ada && $row['status'] == 'approved_kabid'): ?>
+                                                        <span class="badge bg-success">Disetujui Kabid</span><br>
+                                                        <small><strong><?= htmlspecialchars($row['nama_kabid'] ?? 'N/A') ?></strong><br>
+                                                            <?= !empty($row['approved_date_kabid']) ? date('d/m/Y', strtotime($row['approved_date_kabid'])) : '-' ?><br>
+                                                            <em><?= htmlspecialchars($row['catatan_kabid'] ?? '') ?></em></small>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalProses<?= $row['id'] ?>">
+                                                        <i class="bi bi-play-circle"></i> Proses
+                                                    </button>
+
+                                                    <!-- Modal Proses -->
+                                                    <div class="modal fade" id="modalProses<?= $row['id'] ?>" tabindex="-1">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header bg-primary text-white">
+                                                                    <h5 class="modal-title">Mulai Proses Pengajuan</h5>
+                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <form method="POST">
+                                                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                                    <div class="modal-body">
+                                                                        <p>Pengajuan dari <strong><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></strong> akan mulai diproses.</p>
+                                                                        <p>Pastikan semua dokumen sudah lengkap sebelum memproses.</p>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                                        <button type="submit" name="proses" class="btn btn-primary">
+                                                                            <i class="bi bi-play-circle"></i> Mulai Proses
+                                                                        </button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
                                                         </div>
-                                                        <form method="POST">
-                                                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                                            <div class="modal-body">
-                                                                <p>Pengajuan dari <strong><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></strong> akan mulai diproses.</p>
-                                                                <p>Pastikan semua dokumen sudah lengkap sebelum memproses.</p>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                                <button type="submit" name="proses" class="btn btn-primary">
-                                                                    <i class="bi bi-play-circle"></i> Mulai Proses
-                                                                </button>
-                                                            </div>
-                                                        </form>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <?php 
+                                                </td>
+                                            </tr>
+                                        <?php
                                         endwhile;
                                     else:
-                                    ?>
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">
-                                            Tidak ada pengajuan yang siap diproses
-                                        </td>
-                                    </tr>
+                                        ?>
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                Tidak ada pengajuan yang siap diproses
+                                            </td>
+                                        </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -332,57 +368,57 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
                                               WHERE p.status='processing' 
                                               ORDER BY p.processed_date DESC";
                                     $result = $conn->query($query);
-                                    
-                                    if ($result->num_rows > 0):
-                                        while($row = $result->fetch_assoc()):
-                                    ?>
-                                    <tr>
-                                        <td><?= $no++ ?></td>
-                                        <td><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></td>
-                                        <td><span class="badge bg-secondary"><?= htmlspecialchars($row['tipe_pengajuan']) ?></span></td>
-                                        <td><?= htmlspecialchars($row['nama']) ?></td>
-                                        <td><?= htmlspecialchars($row['unit']) ?></td>
-                                        <td><?= $row['processed_date'] ? date('d/m/Y H:i', strtotime($row['processed_date'])) : '-' ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalSelesai<?= $row['id'] ?>">
-                                                <i class="bi bi-check-circle"></i> Selesai
-                                            </button>
-                                        </td>
-                                    </tr>
 
-                                    <!-- Modal Selesai -->
-                                    <div class="modal fade" id="modalSelesai<?= $row['id'] ?>" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-success text-white">
-                                                    <h5 class="modal-title">Selesaikan Pengajuan</h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    if ($result->num_rows > 0):
+                                        while ($row = $result->fetch_assoc()):
+                                    ?>
+                                            <tr>
+                                                <td><?= $no++ ?></td>
+                                                <td><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></td>
+                                                <td><span class="badge bg-secondary"><?= htmlspecialchars($row['tipe_pengajuan']) ?></span></td>
+                                                <td><?= htmlspecialchars($row['nama']) ?></td>
+                                                <td><?= htmlspecialchars($row['unit']) ?></td>
+                                                <td><?= $row['processed_date'] ? date('d/m/Y H:i', strtotime($row['processed_date'])) : '-' ?></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalSelesai<?= $row['id'] ?>">
+                                                        <i class="bi bi-check-circle"></i> Selesai
+                                                    </button>
+                                                </td>
+                                            </tr>
+
+                                            <!-- Modal Selesai -->
+                                            <div class="modal fade" id="modalSelesai<?= $row['id'] ?>" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-success text-white">
+                                                            <h5 class="modal-title">Selesaikan Pengajuan</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <form method="POST">
+                                                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                            <div class="modal-body">
+                                                                <label class="form-label">Catatan Penyelesaian</label>
+                                                                <textarea name="catatan" class="form-control" rows="3" placeholder="Tambahkan catatan penyelesaian..." required></textarea>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                                <button type="submit" name="selesai" class="btn btn-success">
+                                                                    <i class="bi bi-check-circle"></i> Selesaikan
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
-                                                <form method="POST">
-                                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                                    <div class="modal-body">
-                                                        <label class="form-label">Catatan Penyelesaian</label>
-                                                        <textarea name="catatan" class="form-control" rows="3" placeholder="Tambahkan catatan penyelesaian..." required></textarea>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" name="selesai" class="btn btn-success">
-                                                            <i class="bi bi-check-circle"></i> Selesaikan
-                                                        </button>
-                                                    </div>
-                                                </form>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <?php 
+                                        <?php
                                         endwhile;
                                     else:
-                                    ?>
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            Tidak ada pengajuan yang sedang diproses
-                                        </td>
-                                    </tr>
+                                        ?>
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                Tidak ada pengajuan yang sedang diproses
+                                            </td>
+                                        </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -415,36 +451,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
                                 <tbody>
                                     <?php
                                     $no = 1;
-                                    $query = "SELECT p.*, u.username as nama_pengaju FROM pengajuan p 
-                                              LEFT JOIN users u ON p.created_by = u.id
-                                              ORDER BY p.created_at DESC";
+                                    if ($kolom_kabid_ada) {
+                                        $query = "SELECT p.*, u.username as nama_pengaju FROM pengajuan p 
+                                                  LEFT JOIN users u ON p.created_by = u.id
+                                                  ORDER BY p.created_at DESC";
+                                    } else {
+                                        $query = "SELECT p.*, u.username as nama_pengaju FROM pengajuan p 
+                                                  LEFT JOIN users u ON p.created_by = u.id
+                                                  ORDER BY p.created_at DESC";
+                                    }
                                     $result = $conn->query($query);
-                                    
-                                    while($row = $result->fetch_assoc()):
+
+                                    while ($row = $result->fetch_assoc()):
                                     ?>
-                                    <tr>
-                                        <td><?= $no++ ?></td>
-                                        <td><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></td>
-                                        <td><?= htmlspecialchars($row['tipe_pengajuan']) ?></td>
-                                        <td>
-                                            <span class="badge bg-<?= 
-                                                $row['status'] == 'pending' ? 'warning' : 
-                                                ($row['status'] == 'approved_kanit' ? 'success' : 
-                                                ($row['status'] == 'processing' ? 'info' : 
-                                                ($row['status'] == 'completed' ? 'success' : 'danger')))
-                                            ?>">
-                                                <?= $row['status'] == 'pending' ? 'Menunggu Approve' : 
-                                                    ($row['status'] == 'approved_kanit' ? 'Disetujui' : 
-                                                    ($row['status'] == 'processing' ? 'Diproses' : 
-                                                    ($row['status'] == 'completed' ? 'Selesai' : 'Ditolak')))
-                                                ?>
-                                            </span>
-                                        </td>
-                                        <td><?= $row['created_at'] ? date('d/m/Y', strtotime($row['created_at'])) : '-' ?></td>
-                                        <td><?= $row['approved_date_kanit'] ? date('d/m/Y', strtotime($row['approved_date_kanit'])) : '-' ?></td>
-                                        <td><?= $row['processed_date'] ? date('d/m/Y', strtotime($row['processed_date'])) : '-' ?></td>
-                                        <td><?= $row['completed_date'] ? date('d/m/Y', strtotime($row['completed_date'])) : '-' ?></td>
-                                    </tr>
+                                        <tr>
+                                            <td><?= $no++ ?></td>
+                                            <td><?= htmlspecialchars($row['nama_pengaju'] ?? '-') ?></td>
+                                            <td><?= htmlspecialchars($row['tipe_pengajuan']) ?></td>
+                                            <td>
+                                                <span class="badge bg-<?=
+                                                                        $row['status'] == 'pending' ? 'warning' : ($row['status'] == 'approved_kanit' ? 'success' : ($row['status'] == 'approved_kabid' ? 'success' : ($row['status'] == 'processing' ? 'info' : ($row['status'] == 'completed' ? 'success' : 'danger'))))
+                                                                        ?>">
+                                                    <?= $row['status'] == 'pending' ? 'Menunggu Approve' : ($row['status'] == 'approved_kanit' ? 'Disetujui Kanit' : ($row['status'] == 'approved_kabid' ? 'Disetujui Kabid' : ($row['status'] == 'processing' ? 'Diproses' : ($row['status'] == 'completed' ? 'Selesai' : 'Ditolak'))))
+                                                    ?>
+                                                </span>
+                                            </td>
+                                            <td><?= $row['created_at'] ? date('d/m/Y', strtotime($row['created_at'])) : '-' ?></td>
+                                            <td><?= $row['approved_date_kanit'] ? date('d/m/Y', strtotime($row['approved_date_kanit'])) : '-' ?></td>
+                                            <td><?= $row['processed_date'] ? date('d/m/Y', strtotime($row['processed_date'])) : '-' ?></td>
+                                            <td><?= $row['completed_date'] ? date('d/m/Y', strtotime($row['completed_date'])) : '-' ?></td>
+                                        </tr>
                                     <?php endwhile; ?>
                                 </tbody>
                             </table>
@@ -469,4 +505,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
         });
     </script>
 </body>
+
 </html>
