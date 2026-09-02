@@ -11,6 +11,8 @@ if ($_SESSION['role'] != 'kanit' && $_SESSION['role'] != 'kabid') {
     header('Location: index.php');
     exit();
 }
+$current_page = 'persetujuan_kanit.php';
+
 
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
@@ -236,19 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tolak'])) {
 </head>
 
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="brand">
-            <h4><i class="bi bi-building"></i> SIPS</h4>
-            <small>Sistem Informasi Pegawai</small>
-        </div>
-        <a href="index.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <?php if ($role == 'admin'): ?>
-            <a href="pengajuan_admin.php"><i class="bi bi-file-earmark-text"></i> Manajemen Pengajuan</a>
-        <?php endif; ?>
-        <a href="persetujuan_kanit.php" class="active"><i class="bi bi-check-circle"></i> Persetujuan</a>
-        <a href="logout.php" style="margin-top: 30px; color: #e74c3c;"><i class="bi bi-box-arrow-right"></i> Logout</a>
-    </div>
+    <?php include 'includes/sidebar_v2.php'; ?>
 
     <!-- Main Content -->
     <div class="main-content">

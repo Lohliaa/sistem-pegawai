@@ -65,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
     header('Location: pengajuan_admin.php');
     exit();
 }
+$current_page = 'pengajuan_admin.php';
 ?>
-
 <!DOCTYPE html>
 <html>
 
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
         }
 
         .main-content {
-            margin-left: 200px;
+            margin-left: 220px;
             padding: 30px;
             background: #f4f6f9;
             min-height: 100vh;
@@ -132,30 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selesai'])) {
 </head>
 
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="brand">
-            <h4><i class="bi bi-building"></i> SIPS</h4>
-            <small class="text-white">Sistem Informasi Pegawai</small>
-        </div>
-        <a href="index.php"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
-        <?php if ($_SESSION['role'] == 'admin'): ?>
-            <a href="pengajuan_admin.php" class="active"><i class="bi bi-file-earmark-text"></i> <span>Manajemen Pengajuan</span></a>
-            <a href="profile_pegawai.php"><i class="bi bi-people"></i> <span>Profile Pegawai</span></a>
-        <?php endif; ?>
-        <?php if ($_SESSION['role'] == 'staf'): ?>
-            <a href="pengajuan_staf.php"><i class="bi bi-file-earmark-text"></i> <span>Pengajuan</span></a>
-        <?php elseif ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>
-            <a href="persetujuan_kanit.php"><i class="bi bi-check-circle"></i> <span>Persetujuan Pengajuan</span></a>
-        <?php endif; ?>
-        <?php if ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>
-            <a href="approval.php"><i class="bi bi-check2-circle"></i> <span>Persetujuan</span></a>
-        <?php endif; ?>
-        <?php if ($_SESSION['role'] == 'admin'): ?>
-            <a href="setup_users.php"><i class="bi bi-file-earmark-spreadsheet"></i> <span>Manajemen User</span></a>
-        <?php endif; ?>
-        <a href="logout.php" style="margin-top: 30px; color: #e74c3c;"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></a>
-    </div>
+    <?php include 'includes/sidebar_v2.php'; ?>
 
     <!-- Main Content -->
     <div class="main-content">

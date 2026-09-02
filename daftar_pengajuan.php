@@ -11,6 +11,8 @@ if ($_SESSION['role'] != 'staf') {
     header('Location: index.php');
     exit();
 }
+$current_page = 'daftar_pengajuan.php';
+
 
 $user_id = (int)$_SESSION['user_id'];
 
@@ -90,19 +92,7 @@ if (isset($_GET['hapus'])) {
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="brand">
-            <h4><i class="bi bi-building"></i> SIPS</h4>
-            <small>Sistem Informasi Pegawai</small>
-        </div>
-        <a href="index.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <?php if ($_SESSION['role'] == 'admin'): ?>
-            <a href="pengajuan_admin.php"><i class="bi bi-file-earmark-text"></i> Manajemen Pengajuan</a>
-        <?php endif; ?>
-        <a href="pengajuan_staf.php"><i class="bi bi-file-earmark-text"></i> Pengajuan</a>
-        <a href="daftar_pengajuan.php" class="active"><i class="bi bi-list-check"></i> Daftar Pengajuan Saya</a>
-        <a href="logout.php" style="margin-top: 30px; color: #e74c3c;"><i class="bi bi-box-arrow-right"></i> Logout</a>
-    </div>
+    <?php include 'includes/sidebar_v2.php'; ?>
 
     <div class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">

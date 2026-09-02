@@ -12,6 +12,8 @@ if ($_SESSION['role'] != 'admin') {
     exit();
 }
 
+$current_page = 'profile_pegawai.php';
+
 // Fungsi untuk membuat user baru
 function createUser($conn, $username, $role, $password = null)
 {
@@ -68,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah'])) {
     $alamat = mysqli_real_escape_string($conn, $_POST['alamat']);
     $jabatan = mysqli_real_escape_string($conn, $_POST['jabatan']);
     $golongan = mysqli_real_escape_string($conn, $_POST['golongan']);
+    $jenis_kelamin = mysqli_real_escape_string($conn, $_POST['jenis_kelamin']);
     $status_kepegawaian = mysqli_real_escape_string($conn, $_POST['status_kepegawaian']);
     $masa_kerja = mysqli_real_escape_string($conn, $_POST['masa_kerja']);
     $unit = mysqli_real_escape_string($conn, $_POST['unit']);
@@ -93,8 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah'])) {
         }
     }
 
-    $query = "INSERT INTO pegawai (user_id, nama, tempat, tanggal_lahir, alamat, jabatan, golongan, status_kepegawaian, masa_kerja, unit, role) 
-              VALUES (NULLIF($akun_id, 0), '$nama', '$tempat', '$tanggal_lahir', '$alamat', '$jabatan', '$golongan', '$status_kepegawaian', '$masa_kerja', '$unit', '$role')";
+    $query = "INSERT INTO pegawai (user_id, nama, tempat, tanggal_lahir, alamat, jabatan, golongan, jenis_kelamin, status_kepegawaian, masa_kerja, unit, role) 
+              VALUES (NULLIF($akun_id, 0), '$nama', '$tempat', '$tanggal_lahir', '$alamat', '$jabatan', '$golongan', '$jenis_kelamin', '$status_kepegawaian', '$masa_kerja', '$unit', '$role')";
 
     if ($conn->query($query)) {
         if (!isset($_SESSION['alert_message'])) {
@@ -123,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
     $alamat = mysqli_real_escape_string($conn, $_POST['alamat']);
     $jabatan = mysqli_real_escape_string($conn, $_POST['jabatan']);
     $golongan = mysqli_real_escape_string($conn, $_POST['golongan']);
+    $jenis_kelamin = mysqli_real_escape_string($conn, $_POST['jenis_kelamin']);
     $status_kepegawaian = mysqli_real_escape_string($conn, $_POST['status_kepegawaian']);
     $masa_kerja = mysqli_real_escape_string($conn, $_POST['masa_kerja']);
     $unit = mysqli_real_escape_string($conn, $_POST['unit']);
@@ -170,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
               alamat='$alamat', 
               jabatan='$jabatan',
               golongan='$golongan',
+              jenis_kelamin='$jenis_kelamin',
               status_kepegawaian='$status_kepegawaian',
               masa_kerja='$masa_kerja',
               unit='$unit',
@@ -330,11 +335,12 @@ $total_users = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc(
 
 // Status Pegawai yang belum dipetakan (untuk validasi)
 $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE status_kepegawaian NOT IN ('Mitra', 'Magang', 'Honorer', 'CPT', 'CGT', 'GT', 'PT')")->fetch_assoc()['total'];
+$total_laki = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jenis_kelamin='Laki-laki'")->fetch_assoc()['total'];
+$total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jenis_kelamin='Perempuan'")->fetch_assoc()['total'];
 ?>
 
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Profile Pegawai</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -519,28 +525,7 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
 </head>
 
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="brand">
-            <h4><i class="bi bi-building"></i> SIPS</h4>
-            <small>Sistem Informasi Pegawai</small>
-        </div>
-        <a href="index.php"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
-        <?php if ($_SESSION['role'] == 'admin'): ?>
-            <a href="pengajuan_admin.php"><i class="bi bi-file-earmark-text"></i> <span>Manajemen Pengajuan</span></a>
-            <a href="profile_pegawai.php" class="active"><i class="bi bi-people"></i> <span>Profile Pegawai</span></a>
-            <a href="setup_users.php"><i class="bi bi-file-earmark-spreadsheet"></i> <span>Manajemen User</span></a>
-        <?php endif; ?>
-        <?php if ($_SESSION['role'] == 'staf'): ?>
-            <a href="pengajuan_staf.php"><i class="bi bi-file-earmark-text"></i> <span>Pengajuan</span></a>
-        <?php elseif ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>
-            <a href="persetujuan_kanit.php"><i class="bi bi-check-circle"></i> <span>Persetujuan Pengajuan</span></a>
-        <?php endif; ?>
-        <?php if ($_SESSION['role'] == 'kanit' || $_SESSION['role'] == 'kabid'): ?>
-            <a href="approval.php"><i class="bi bi-check2-circle"></i> <span>Persetujuan</span></a>
-        <?php endif; ?>
-        <a href="logout.php" style="margin-top: 30px; color: #e74c3c;"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></a>
-    </div>
+    <?php include 'includes/sidebar_v2.php'; ?>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -554,7 +539,7 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
 
         <!-- Statistik Status Pegawai -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="stat-card" style="border-color: #3498db;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -565,7 +550,21 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <div class="stat-card" style="border-color: #e74c3c;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="stat-label">Jenis Kelamin</div>
+                            <div class="stat-number" style="font-size: 1.2rem;">
+                                <div>L: <span class="text-primary"><?= $total_laki ?></span></div>
+                                <div>P: <span class="text-danger"><?= $total_perempuan ?></span></div>
+                            </div>
+                        </div>
+                        <i class="bi bi-gender-ambiguous" style="font-size: 1.5rem; color: #e74c3c; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
                 <div class="stat-card" style="border-color: #2ecc71;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -576,7 +575,7 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="stat-card" style="border-color: #f31270;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -587,7 +586,7 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="stat-card" style="border-color: #f39c12;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -646,13 +645,13 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
                 </div>
             </div>
             <div class="col-md-2">
-                <div class="stat-card" style="border-color: #e74c3c;">
+                <div class="stat-card" style="border-color: #34495e;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="stat-label">Total User</div>
                             <div class="stat-number"><?= $total_users ?></div>
                         </div>
-                        <i class="bi bi-person-circle" style="font-size: 2rem; color: #e74c3c; opacity: 0.3;"></i>
+                        <i class="bi bi-person-circle" style="font-size: 2rem; color: #34495e; opacity: 0.3;"></i>
                     </div>
                 </div>
             </div>
@@ -854,6 +853,30 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
                                         <option value="kabid">KABID</option>
                                         <option value="admin">ADMIN</option>
                                     </select>
+                                     <div class="col-md-6">
+                                         <label class="form-label">Status Kepegawaian <span class="text-danger">*</span></label>
+                                         <select name="status_kepegawaian" class="form-select" required>
+                                            <option value="">Pilih Status</option>
+                                            <option value="Mitra" <?= $edit_data['status_kepegawaian'] == 'Mitra' ? 'selected' : '' ?>>Mitra</option>
+                                            <option value="Magang" <?= $edit_data['status_kepegawaian'] == 'Magang' ? 'selected' : '' ?>>Magang</option>
+                                            <option value="Honorer" <?= $edit_data['status_kepegawaian'] == 'Honorer' ? 'selected' : '' ?>>Honorer</option>
+                                            <option value="CPT" <?= $edit_data['status_kepegawaian'] == 'CPT' ? 'selected' : '' ?>>CPT</option>
+                                            <option value="CGT" <?= $edit_data['status_kepegawaian'] == 'CGT' ? 'selected' : '' ?>>CGT</option>
+                                            <option value="GT" <?= $edit_data['status_kepegawaian'] == 'GT' ? 'selected' : '' ?>>GT</option>
+                                            <option value="PT" <?= $edit_data['status_kepegawaian'] == 'PT' ? 'selected' : '' ?>>PT</option>
+                                        </select>
+                                     </div>
+                                     <div class="col-md-6">
+                                         <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+                                         <select name="jenis_kelamin" class="form-select" required>
+                                            <option value="Laki-laki" <?= $edit_data['jenis_kelamin'] == 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
+                                            <option value="Perempuan" <?= $edit_data['jenis_kelamin'] == 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
+                                        </select>
+                                     </div>
+                                     <div class="col-md-6">
+                                         <label class="form-label">Masa Kerja <span class="text-danger">*</span></label>
+                                         <input type="text" name="masa_kerja" class="form-control" placeholder="Contoh: 10 Tahun" required>
+                                     </div>
                                 </div>
                                 <div class="col-md-6" id="password_section_tambah" style="display: none;">
                                     <label class="form-label">Password (default: 123456)</label>
@@ -982,6 +1005,13 @@ $total_lainnya = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE statu
                                     <div class="col-md-4">
                                         <label class="form-label">Golongan <span class="text-danger">*</span></label>
                                         <input type="text" name="golongan" class="form-control" value="<?= htmlspecialchars($edit_data['golongan']) ?>" required>
+                                     <div class="col-md-6">
+                                         <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+                                         <select name="jenis_kelamin" class="form-select" required>
+                                            <option value="Laki-laki" <?= $edit_data['jenis_kelamin'] == 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
+                                            <option value="Perempuan" <?= $edit_data['jenis_kelamin'] == 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
+                                        </select>
+                                     </div>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Unit <span class="text-danger">*</span></label>

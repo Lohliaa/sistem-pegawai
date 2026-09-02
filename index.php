@@ -10,6 +10,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_role = $_SESSION['role'];
 $user_id = (int)$_SESSION['user_id'];
+$current_page = 'index.php';
+
 
 // Ambil data identitas berdasarkan user yang login
 // Query ini akan mencari data pegawai berdasarkan user_id atau username
@@ -100,30 +102,10 @@ if ($identity_result && $identity_result->num_rows > 0) {
 </head>
 
 <body>
-    <div class="role-badge">
-        <span class="badge bg-info">Role: <?= strtoupper($user_role) ?></span>
-        <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
-    </div>
-
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-2 sidebar">
-                <div class="brand">
-                    <h4 style="color: #ffffff;"><i class="bi bi-building"></i> SIPS</h4>
-                    <small style="color: #ffffff;">Sistem Informasi Pegawai</small>
-                </div> <a href="index.php" class="active"><i class="bi bi-house"></i> Dashboard</a>
-                <?php if ($user_role == 'admin'): ?>
-                    <a href="pengajuan_admin.php"><i class="bi bi-file-earmark-text"></i> Manajemen Pengajuan</a>
-                    <a href="profile_pegawai.php"><i class="bi bi-person-badge"></i> Profile Pegawai</a>
-                    <a href="setup_users.php"><i class="bi bi-file-earmark-spreadsheet"></i> Manajemen User</a>
-                <?php endif; ?>
-                <?php if ($user_role == 'staf'): ?>
-                    <a href="pengajuan_staf.php"><i class="bi bi-file-earmark-text"></i> Pengajuan</a>
-                    <a href="daftar_pengajuan.php"><i class="bi bi-list-check"></i> Daftar Pengajuan Saya</a>
-                <?php elseif ($user_role == 'kanit' || $user_role == 'kabid'): ?>
-                    <a href="persetujuan_kanit.php"><i class="bi bi-check-circle"></i> Persetujuan Pengajuan</a>
-                <?php endif; ?>
+            <div class="col-md-2 p-0">
+                <?php include 'includes/sidebar.php'; ?>
             </div>
 
             <!-- Main Content -->

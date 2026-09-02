@@ -9,6 +9,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
+$current_page = 'pengajuan.php';
+
 
 // Handle tambah data
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah'])) {
@@ -45,14 +47,8 @@ if (isset($_GET['hapus'])) {
 <body>
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2 sidebar" style="background:#2c3e50;min-height:100vh;padding:20px;">
-                <h4 class="text-white mb-4">Sistem Pegawai</h4>
-                <a href="index.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-house"></i> Dashboard</a>
-                <?php if ($_SESSION['role'] == 'admin'): ?>
-                    <a href="pengajuan_admin.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-file-earmark-text"></i> Manajemen Pengajuan</a>
-                    <a href="profile_pegawai.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-person-badge"></i> Profile Pegawai</a>
-                <?php endif; ?>
-                <a href="logout.php" class="text-white" style="display:block;padding:10px 15px;text-decoration:none;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            <div class="col-md-2 p-0">
+                <?php include 'includes/sidebar.php'; ?>
             </div>
 
             <div class="col-md-10 p-4">
