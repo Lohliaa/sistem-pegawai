@@ -41,45 +41,6 @@ if (isset($_GET['hapus'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <style>
-        .sidebar { background: #2c3e50; min-height: 100vh; padding: 20px; position: fixed; width: 250px; left: 0; top: 0; }
-        .sidebar .brand {
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 20px;
-        }
-        .sidebar .brand h4 {
-            color: #fff;
-            font-weight: 600;
-        }
-        .sidebar .brand small {
-            color: #8ba0b8;
-        }
-        .sidebar a {
-            color: #b0c4de;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            padding: 12px 25px;
-            margin: 3px 10px;
-            border-radius: 10px;
-            transition: all 0.3s;
-        }
-        .sidebar a i {
-            margin-right: 12px;
-            width: 20px;
-            font-size: 1.2rem;
-        }
-        .sidebar a:hover {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            transform: translateX(5px);
-        }
-        .sidebar a.active {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(52,152,219,0.3);
-        }
-        .main-content { margin-left: 250px; padding: 30px; background: #f4f6f9; min-height: 100vh; }
         .badge-pending { background: #f39c12; }
         .badge-approved_kanit { background: #3498db; }
         .badge-approved_kabid { background: #27ae60; }
@@ -92,13 +53,16 @@ if (isset($_GET['hapus'])) {
     </style>
 </head>
 <body>
-    <?php include 'includes/sidebar_v2.php'; ?>
-
-    <div class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="bi bi-list-check text-primary"></i> Daftar Pengajuan Saya</h2>
-            <span class="badge bg-success p-2"><i class="bi bi-person-badge"></i> STAF</span>
-        </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 p-0">
+                <?php $current_page = 'daftar_pengajuan.php'; include 'includes/sidebar.php'; ?>
+            </div>
+            <div class="col-md-10 p-4" style="background:#f4f6f9;min-height:100vh;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-list-check text-primary"></i> Daftar Pengajuan Saya</h2>
+                    <span class="badge bg-success p-2"><i class="bi bi-person-badge"></i> STAF</span>
+                </div>
 
         <?php if (isset($_SESSION['alert_message'])): ?>
         <div class="alert alert-<?= $_SESSION['alert_icon'] == 'success' ? 'success' : 'warning' ?> alert-dismissible fade show" role="alert">
@@ -213,5 +177,9 @@ if (isset($_GET['hapus'])) {
             });
         });
     </script>
+            </div>
+        </div>
+    </div>
 </body>
+
 </html>

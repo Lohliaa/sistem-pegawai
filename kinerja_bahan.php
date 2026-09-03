@@ -101,27 +101,5 @@ $current_page = 'kinerja_bahan.php';
 
 </html>
 <style>
-    .sidebar {
-        min-height: 100vh;
-        background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
-        padding: 20px;
-    }
-
-    .sidebar a {
-        color: white;
-        text-decoration: none;
-        display: block;
-        padding: 10px 15px;
-        margin: 5px 0;
-        border-radius: 5px;
-    }
-
-    .sidebar a:hover {
-        background: #34495e;
-    }
-
-    .sidebar a.active {
-        background: #3498db;
-    }
 </style>
 </head>

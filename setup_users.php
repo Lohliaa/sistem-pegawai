@@ -337,67 +337,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
-        .sidebar {
-            min-height: 100vh;
-            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
-            padding: 20px 0;
-            position: fixed;
-            width: 250px;
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-
-        .sidebar .brand {
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .sidebar .brand h4 {
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .sidebar .brand small {
-            color: #8ba0b8;
-        }
-
-        .sidebar a {
-            color: #b0c4de;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            padding: 12px 25px;
-            margin: 3px 10px;
-            border-radius: 10px;
-            transition: all 0.3s;
-        }
-
-        .sidebar a i {
-            margin-right: 12px;
-            width: 20px;
-            font-size: 1.2rem;
-        }
-
-        .sidebar a:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            transform: translateX(5px);
-        }
-
-        .sidebar a.active {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-        }
-
-        .main-content {
-            margin-left: 250px;
-            padding: 20px 30px;
-            background: #f4f6f9;
-            min-height: 100vh;
-        }
-
         .card-custom {
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -446,42 +385,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
             font-size: 3rem;
             color: #3498db;
         }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 70px;
-            }
-
-            .sidebar .brand h4,
-            .sidebar .brand small,
-            .sidebar a span {
-                display: none;
-            }
-
-            .sidebar a {
-                justify-content: center;
-                padding: 12px;
-            }
-
-            .sidebar a i {
-                margin-right: 0;
-                font-size: 1.5rem;
-            }
-
-            .main-content {
-                margin-left: 70px;
-                padding: 15px;
-            }
-        }
     </style>
 </head>
 
 <body>
-    <?php include 'includes/sidebar_v2.php'; ?>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 p-0">
+                <?php $current_page = 'setup_users.php'; include 'includes/sidebar.php'; ?>
+            </div>
+            <div class="col-md-10 p-4" style="background:#f4f6f9;min-height:100vh;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
             <h2><i class="bi bi-people-gear text-primary"></i> Manajemen User & Pegawai</h2>
             <span class="badge bg-danger p-2">
                 <i class="bi bi-person-badge"></i> <?= strtoupper($_SESSION['role']) ?>
@@ -937,6 +851,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
             });
         }
     </script>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

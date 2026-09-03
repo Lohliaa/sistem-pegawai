@@ -77,44 +77,6 @@ $current_page = 'pengajuan_admin.php';
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
-        .sidebar {
-            background: #2c3e50;
-            min-height: 100vh;
-            padding: 20px;
-            position: fixed;
-            width: 200px;
-            left: 0;
-        }
-
-        .sidebar h4 {
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .sidebar a {
-            color: white;
-            display: block;
-            padding: 10px 15px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-bottom: 5px;
-        }
-
-        .sidebar a:hover {
-            background: #34495e;
-        }
-
-        .sidebar a.active {
-            background: #3498db;
-        }
-
-        .main-content {
-            margin-left: 220px;
-            padding: 30px;
-            background: #f4f6f9;
-            min-height: 100vh;
-        }
-
         .stat-card {
             background: white;
             border-radius: 10px;
@@ -132,16 +94,18 @@ $current_page = 'pengajuan_admin.php';
 </head>
 
 <body>
-    <?php include 'includes/sidebar_v2.php'; ?>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="bi bi-file-earmark-text text-primary"></i> Manajemen Pengajuan</h2>
-            <span class="badge bg-danger p-2">
-                <i class="bi bi-person-badge"></i> ADMIN
-            </span>
-        </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 p-0">
+                <?php $current_page = 'pengajuan_admin.php'; include 'includes/sidebar.php'; ?>
+            </div>
+            <div class="col-md-10 content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-file-earmark-text text-primary"></i> Manajemen Pengajuan</h2>
+                    <span class="badge bg-danger p-2">
+                        <i class="bi bi-person-badge"></i> ADMIN
+                    </span>
+                </div>
 
         <!-- Alert -->
         <?php if (isset($_SESSION['alert_message'])): ?>
@@ -481,6 +445,9 @@ $current_page = 'pengajuan_admin.php';
             });
         });
     </script>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
