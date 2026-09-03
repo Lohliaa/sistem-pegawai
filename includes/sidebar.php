@@ -2,12 +2,9 @@
 // File: includes/sidebar.php
 // Sidebar terpusat untuk konsistensi semua halaman
 // Cara pakai: sertakan file ini di dalam <body> halaman masing-masing
-
-// Default current_page jika tidak di-set
 if (!isset($current_page)) { $current_page = ''; }
 $role = $_SESSION['role'] ?? '';
 ?>
-
 <style>
     .sidebar {
         background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
@@ -68,23 +65,30 @@ $role = $_SESSION['role'] ?? '';
         <a href="setup_users.php" class="<?= $current_page=='setup_users.php'?'active':'' ?>">
             <i class="bi bi-file-earmark-spreadsheet"></i> Manajemen User
         </a>
-
-        <!-- Sekat Penilaian Kinerja -->
-        <div class="section-title">Penilaian Kinerja</div>
-        <hr class="section-divider">
-        <a href="kinerja_status.php" class="<?= $current_page=='kinerja_status.php'?'active':'' ?>">
-            <i class="bi bi-person-check"></i> Status
-        </a>
-        <a href="kinerja_periode.php" class="<?= $current_page=='kinerja_periode.php'?'active':'' ?>">
-            <i class="bi bi-calendar3"></i> Periode
-        </a>
-        <a href="kinerja_pejabat.php" class="<?= $current_page=='kinerja_pejabat.php'?'active':'' ?>">
-            <i class="bi bi-award"></i> Pejabat
-        </a>
-        <a href="kinerja_bahan.php" class="<?= $current_page=='kinerja_bahan.php'?'active':'' ?>">
-            <i class="bi bi-file-earmark-text"></i> Bahan Penilaian
-        </a>
     <?php endif; ?>
+
+    <!-- Sekat Penilaian Kinerja - Visible untuk SEMUA role -->
+    <div class="section-title">Penilaian Kinerja</div>
+    <hr class="section-divider">
+    <a href="kinerja_status.php" class="<?= $current_page=='kinerja_status.php'?'active':'' ?>">
+        <i class="bi bi-person-check"></i> Status
+    </a>
+    <a href="kinerja_periode.php" class="<?= $current_page=='kinerja_periode.php'?'active':'' ?>">
+        <i class="bi bi-calendar3"></i> Periode
+    </a>
+    <a href="kinerja_pejabat.php" class="<?= $current_page=='kinerja_pejabat.php'?'active':'' ?>">
+        <i class="bi bi-award"></i> Pejabat
+    </a>
+    <a href="kinerja_bahan.php" class="<?= $current_page=='kinerja_bahan.php'?'active':'' ?>">
+        <i class="bi bi-file-earmark-text"></i> Bahan Penilaian
+    </a>
+    <a href="form_penilaian.php" class="<?= $current_page=='form_penilaian.php'?'active':'' ?>">
+        <i class="bi bi-clipboard-check"></i> Form Penilaian
+    <a href="laporan_penilaian.php" class="<?= $current_page=='laporan_penilaian.php'?'active':'' ?>">
+        <i class="bi bi-file-earmark-bar-graph"></i> Laporan Penilaian
+    </a>
+
+    </a>
 
     <?php if ($role == 'staf'): ?>
         <a href="pengajuan_staf.php" class="<?= $current_page=='pengajuan_staf.php'?'active':'' ?>">

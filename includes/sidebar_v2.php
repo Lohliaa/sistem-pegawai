@@ -89,6 +89,9 @@ if (!defined('SIDEBAR_V2_CSS_LOADED')) {
         <a href="kinerja_bahan.php" class="<?= $current_page=='kinerja_bahan.php'?'active':'' ?>">
             <i class="bi bi-file-earmark-text"></i> <span>Bahan Penilaian</span>
         </a>
+        <a href="form_penilaian.php" class="<?= $current_page=='form_penilaian.php'?'active':'' ?>">
+            <i class="bi bi-clipboard-check"></i> <span>Form Penilaian</span>
+        </a>
     <?php endif; ?>
 
     <?php if ($role == 'staf'): ?>

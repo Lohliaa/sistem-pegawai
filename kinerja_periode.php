@@ -1,8 +1,9 @@
 <?php
 session_start();
 require_once 'config/database.php';
-if (!isset($_SESSION['user_id']) || $_SESSION['role']!='admin') { header('Location: login.php'); exit(); }
-if ($_SERVER['REQUEST_METHOD']=='POST') {
+if (!isset($_SESSION['user_id'])) { header('Location: login.php'); exit(); }
+$can_crud = in_array($_SESSION['role'], ['admin', 'kabid', 'kanit']);
+if ($_SERVER['REQUEST_METHOD']=='POST' && $can_crud) {
     $_SESSION['msg'] = '';
     if (empty($_POST['nama_kuartal'])) { $_SESSION['msg'] = 'Kuartal harus dipilih'; }
     elseif (empty($_POST['periode_bulan'])) { $_SESSION['msg'] = 'Periode harus diisi'; }
@@ -24,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST') {
     }
     header('Location: kinerja_periode.php'); exit();
 }
-if (isset($_GET['hapus'])) {
+if (isset($_GET['hapus']) && $can_crud) {
     $conn->query('DELETE FROM periode_penilaian WHERE id='.(int)$_GET['hapus']);
     $_SESSION['msg'] = 'Dihapus!';
     header('Location: kinerja_periode.php'); exit();
@@ -60,52 +61,17 @@ $current_page = 'kinerja_periode.php';
 <?php unset($_SESSION['msg']); endif; ?>
 <div class="card shadow-sm">
 <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-<h5 class="mb-0"><i class="bi bi-list"></i> Daftar Periode</h5>
-<button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#add"><i class="bi bi-plus-circle"></i> Tambah</button>
-</div>
-<div class="card-body">
-<div class="table-responsive">
-<table class="table table-striped table-hover" id="tbl">
-<thead class="table-dark">
-<tr><th>No</th><th>Kuartal</th><th>Periode</th><th>Tahun</th><th class="text-center">Aksi</th></tr>
-</thead>
-<tbody>
-<?php if(empty($list)): ?>
-<tr><td colspan="5" class="text-center text-muted">Belum ada data. Klik <b>Tambah</b>.</td></tr>
-<?php else: foreach($list as $i => $p): ?>
-<tr>
-<td><?= $i+1 ?></td>
-<td><span class="badge bg-warning text-dark"><?= htmlspecialchars($p['nama_kuartal']) ?></span></td>
-<td><?= htmlspecialchars($p['periode_bulan']) ?></td>
-<td><strong><?= htmlspecialchars($p['tahun']) ?></strong></td>
-<td class="text-center">
-<button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#e<?= $p['id'] ?>"><i class="bi bi-pencil"></i></button>
-<a href="?hapus=<?= $p['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus?')"><i class="bi bi-trash"></i></a>
-</td>
-</tr>
-<div class="modal fade" id="e<?= $p['id'] ?>"><div class="modal-dialog"><div class="modal-content">
-<div class="modal-header bg-warning text-dark"><h5 class="modal-title"><i class="bi bi-pencil"></i> Edit</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-<form method="POST"><div class="modal-body">
-<input type="hidden" name="id" value="<?= $p['id'] ?>">
-<div class="mb-3"><label class="form-label">Kuart</label>
-<select name="nama_kuartal" class="form-select" required>
-<option value="">-- Pilih --</option>
-<option value="Q1" <?= $p['nama_kuartal']=='Q1'?'selected':'' ?>>Q1</option>
-<option value="Q2" <?= $p['nama_kuartal']=='Q2'?'selected':'' ?>>Q2</option>
-<option value="Q3" <?= $p['nama_kuartal']=='Q3'?'selected':'' ?>>Q3</option>
-<option value="Q4" <?= $p['nama_kuartal']=='Q4'?'selected':'' ?>>Q4</option>
-</select>
-</div>
-<div class="mb-3"><label class="form-label">Periode</label>
-<input type="text" name="periode_bulan" class="form-control" value="<?= htmlspecialchars($p['periode_bulan']) ?>" required></div>
-<div class="mb-3"><label class="form-label">Tahun</label>
-<input type="number" name="tahun" class="form-control" value="<?= $p['tahun'] ?>" min="2020" max="2099" required></div>
-</div>
-<div class="modal-footer"><button type="submit" name="edit" class="btn btn-primary">Simpan</button></div>
-</form>
-</div></div></div>
-<?php endforeach; endif; ?>
-</tbody>
+                        <h5 class="mb-0"><i class="bi bi-list"></i> Daftar Periode</h5>
+                        <?php if (!$can_crud): ?><span class="badge bg-secondary"><i class="bi bi-eye"></i> Read Only</span><?php endif; ?>
+                        <?php if ($can_crud): ?><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#add"><i class="bi bi-plus-circle"></i> Tambah</button><?php endif; ?>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="tbl">
+                                <thead class="table-dark">
+                                    <tr><th>No</th><th>Kuartal</th><th>Periode</th><th>Tahun</th><th class="text-center">Aksi</th></tr>
+                                </thead>
+                                <tbody></tbody>
 </table>
 </div>
 </div>
@@ -140,4 +106,3 @@ $current_page = 'kinerja_periode.php';
 <script>$(function(){ $('#tbl').DataTable(); });</script>
 </body>
 </html>
-
