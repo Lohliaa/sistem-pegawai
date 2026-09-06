@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit'])) {
               status_kepegawaian='$status_kepegawaian',
               masa_kerja='$masa_kerja',
               unit='$unit',
-              role='$role' 
+              role='$role'
               WHERE id=$id";
 
     if ($conn->query($query)) {
@@ -239,17 +239,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_excel'])) {
 
                 while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                     $num = count($data);
-                    if ($num >= 9) {
+                    if ($num >= 10) {
                         $nama = mysqli_real_escape_string($conn, trim($data[0]));
                         $tempat = mysqli_real_escape_string($conn, trim($data[1] ?? ''));
                         $tanggal_lahir = mysqli_real_escape_string($conn, trim($data[2] ?? ''));
                         $alamat = mysqli_real_escape_string($conn, trim($data[3] ?? ''));
                         $jabatan = mysqli_real_escape_string($conn, trim($data[4] ?? ''));
                         $golongan = mysqli_real_escape_string($conn, trim($data[5] ?? ''));
-                        $status_kepegawaian = mysqli_real_escape_string($conn, trim($data[6] ?? ''));
-                        $masa_kerja = mysqli_real_escape_string($conn, trim($data[7] ?? ''));
-                        $unit = mysqli_real_escape_string($conn, trim($data[8] ?? ''));
-                        $role = isset($data[9]) ? mysqli_real_escape_string($conn, trim($data[9])) : 'staf';
+                        $jenis_kelamin = mysqli_real_escape_string($conn, trim($data[6] ?? ''));
+                        $status_kepegawaian = mysqli_real_escape_string($conn, trim($data[7] ?? ''));
+                        $masa_kerja = mysqli_real_escape_string($conn, trim($data[8] ?? ''));
+                        $unit = mysqli_real_escape_string($conn, trim($data[9] ?? ''));
+                        $role = isset($data[10]) ? mysqli_real_escape_string($conn, trim($data[10])) : 'staf';
 
                         if (strpos($tanggal_lahir, '/') !== false) {
                             $parts = explode('/', $tanggal_lahir);
@@ -268,8 +269,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_excel'])) {
                                 $users_created++;
                             }
 
-                            $query = "INSERT INTO pegawai (user_id, nama, tempat, tanggal_lahir, alamat, jabatan, golongan, status_kepegawaian, masa_kerja, unit, role)
-                                      VALUES (NULLIF($user_id, 0), '$nama', '$tempat', '$tanggal_lahir', '$alamat', '$jabatan', '$golongan', '$status_kepegawaian', '$masa_kerja', '$unit', '$role')";
+                            $query = "INSERT INTO pegawai (user_id, nama, tempat, tanggal_lahir, alamat, jabatan, golongan, jenis_kelamin, status_kepegawaian, masa_kerja, unit, role)
+                                      VALUES (NULLIF($user_id, 0), '$nama', '$tempat', '$tanggal_lahir', '$alamat', '$jabatan', '$golongan', '$jenis_kelamin', '$status_kepegawaian', '$masa_kerja', '$unit', '$role')";
 
                             if ($conn->query($query)) {
                                 $imported++;
@@ -765,31 +766,14 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
                                         <option value="kanit">KANIT</option>
                                         <option value="kabid">KABID</option>
                                         <option value="admin">ADMIN</option>
+                                    </select>                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+                                    <select name="jenis_kelamin" class="form-select" required>
+                                        <option value="">Pilih Jenis Kelamin</option>
+                                        <option value="Laki-laki">Laki-laki</option>
+                                        <option value="Perempuan">Perempuan</option>
                                     </select>
-                                     <div class="col-md-6">
-                                         <label class="form-label">Status Kepegawaian <span class="text-danger">*</span></label>
-                                         <select name="status_kepegawaian" class="form-select" required>
-                                            <option value="">Pilih Status</option>
-                                            <option value="Mitra" <?= $edit_data['status_kepegawaian'] == 'Mitra' ? 'selected' : '' ?>>Mitra</option>
-                                            <option value="Magang" <?= $edit_data['status_kepegawaian'] == 'Magang' ? 'selected' : '' ?>>Magang</option>
-                                            <option value="Honorer" <?= $edit_data['status_kepegawaian'] == 'Honorer' ? 'selected' : '' ?>>Honorer</option>
-                                            <option value="CPT" <?= $edit_data['status_kepegawaian'] == 'CPT' ? 'selected' : '' ?>>CPT</option>
-                                            <option value="CGT" <?= $edit_data['status_kepegawaian'] == 'CGT' ? 'selected' : '' ?>>CGT</option>
-                                            <option value="GT" <?= $edit_data['status_kepegawaian'] == 'GT' ? 'selected' : '' ?>>GT</option>
-                                            <option value="PT" <?= $edit_data['status_kepegawaian'] == 'PT' ? 'selected' : '' ?>>PT</option>
-                                        </select>
-                                     </div>
-                                     <div class="col-md-6">
-                                         <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
-                                         <select name="jenis_kelamin" class="form-select" required>
-                                            <option value="Laki-laki" <?= $edit_data['jenis_kelamin'] == 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
-                                            <option value="Perempuan" <?= $edit_data['jenis_kelamin'] == 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
-                                        </select>
-                                     </div>
-                                     <div class="col-md-6">
-                                         <label class="form-label">Masa Kerja <span class="text-danger">*</span></label>
-                                         <input type="text" name="masa_kerja" class="form-control" placeholder="Contoh: 10 Tahun" required>
-                                     </div>
                                 </div>
                                 <div class="col-md-6" id="password_section_tambah" style="display: none;">
                                     <label class="form-label">Password (default: 123456)</label>

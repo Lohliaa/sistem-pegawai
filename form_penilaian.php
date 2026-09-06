@@ -35,11 +35,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['set_identity'])) {
     $pejabat_id = (int)($_POST['pejabat_id'] ?? 0);
     $periode_id = (int)($_POST['periode_id'] ?? 0);
     $pegawai_id_pilih = (int)($_POST['pegawai_id_pilih'] ?? 0);
+    $tanggal_penilaian = trim($_POST['tanggal_penilaian'] ?? '');
     if ($pejabat_id > 0 && $periode_id > 0) {
         $_SESSION['form_pejabat_id'] = $pejabat_id;
         $_SESSION['form_periode_id'] = $periode_id;
+        $_SESSION['form_tanggal_penilaian'] = $tanggal_penilaian;
         if ($is_admin && $pegawai_id_pilih > 0) {
             $_SESSION['form_pegawai_id'] = $pegawai_id_pilih;
+        }
+        // Sinkronkan tanggal_penilaian ke semua row existing (pegawai + periode) agar konsisten
+        if ($pegawai_id_pilih > 0 && !empty($tanggal_penilaian) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal_penilaian)) {
+            $tg_sync = mysqli_real_escape_string($conn, $tanggal_penilaian);
+            $conn->query("UPDATE form_penilaian SET tanggal_penilaian = '$tg_sync' WHERE pegawai_id = $pegawai_id_pilih AND periode_id = $periode_id");
         }
         $_SESSION['msg'] = 'Identitas penilaian disimpan!';
     } else {
@@ -51,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['set_identity'])) {
 
 $selected_pejabat_id = $_SESSION['form_pejabat_id'] ?? 0;
 $selected_periode_id = $_SESSION['form_periode_id'] ?? 0;
+$selected_tanggal = $_SESSION['form_tanggal_penilaian'] ?? date('Y-m-d');
 
 // Untuk admin: pegawai yang sedang dinilai (bisa pilih siapa saja)
 // Untuk non-admin: otomatis dari session user
@@ -123,9 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_catatan_umum'])) 
         $peg_id = $target_pegawai['id'];
         $pj_id = $selected_pejabat_id;
         $pr_id = $selected_periode_id;
+        $tg_esc = mysqli_real_escape_string($conn, $selected_tanggal);
         $cat_esc = mysqli_real_escape_string($conn, $catatan_umum);
         // Simpan sebagai baris khusus dengan nama_kolom = 'catatan_umum'
-        $conn->query("INSERT INTO form_penilaian (nama_kolom, nilai, catatan, pegawai_id, pejabat_id, periode_id) VALUES ('catatan_umum', 0, '$cat_esc', '$peg_id', '$pj_id', '$pr_id') ON DUPLICATE KEY UPDATE catatan = VALUES(catatan), pejabat_id = VALUES(pejabat_id), updated_at = CURRENT_TIMESTAMP");
+        $conn->query("INSERT INTO form_penilaian (nama_kolom, nilai, catatan, pegawai_id, pejabat_id, periode_id, tanggal_penilaian) VALUES ('catatan_umum', 0, '$cat_esc', '$peg_id', '$pj_id', '$pr_id', COALESCE(NULLIF('$tg_esc',''), NULL)) ON DUPLICATE KEY UPDATE catatan = VALUES(catatan), pejabat_id = VALUES(pejabat_id), tanggal_penilaian = COALESCE(NULLIF(VALUES(tanggal_penilaian),''), tanggal_penilaian), updated_at = CURRENT_TIMESTAMP");
         $_SESSION['msg'] = 'Catatan Umum disimpan!';
     }
     header('Location: form_penilaian.php');
@@ -147,10 +156,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['key'])) {
         $peg_id = $target_pegawai['id'];
         $pj_id = $selected_pejabat_id;
         $pr_id = $selected_periode_id;
+        $tg_esc = mysqli_real_escape_string($conn, $selected_tanggal);
         $key_esc = mysqli_real_escape_string($conn, $key);
         $cat_esc = mysqli_real_escape_string($conn, $catatan);
         // Atomic upsert - composite UNIQUE idx_3key (nama_kolom, pegawai_id, periode_id) handles duplicates
-        $conn->query("INSERT INTO form_penilaian (nama_kolom, nilai, catatan, pegawai_id, pejabat_id, periode_id) VALUES ('$key_esc', $nilai, '$cat_esc', '$peg_id', '$pj_id', '$pr_id') ON DUPLICATE KEY UPDATE nilai = VALUES(nilai), catatan = VALUES(catatan), pejabat_id = VALUES(pejabat_id), updated_at = CURRENT_TIMESTAMP");
+        $conn->query("INSERT INTO form_penilaian (nama_kolom, nilai, catatan, pegawai_id, pejabat_id, periode_id, tanggal_penilaian) VALUES ('$key_esc', $nilai, '$cat_esc', '$peg_id', '$pj_id', '$pr_id', COALESCE(NULLIF('$tg_esc',''), NULL)) ON DUPLICATE KEY UPDATE nilai = VALUES(nilai), catatan = VALUES(catatan), pejabat_id = VALUES(pejabat_id), tanggal_penilaian = COALESCE(NULLIF('$tg_esc',''), tanggal_penilaian), updated_at = CURRENT_TIMESTAMP");
         $_SESSION['msg'] = 'Nilai disimpan!';
     }
     header('Location: form_penilaian.php');
@@ -296,6 +306,12 @@ $current_page = 'form_penilaian.php';
                                     }
                                     ?>
                                     <div class="fw-bold"><?= htmlspecialchars($periode_label) ?></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-2 h-100" style="background:#fce4ec;">
+                                    <div class="small text-muted"><i class="bi bi-calendar-event"></i> Tanggal Penilaian</div>
+                                    <div class="fw-bold"><?= $selected_tanggal ? htmlspecialchars(date('d-m-Y', strtotime($selected_tanggal))) : '<span class="text-muted">-</span>' ?></div>
                                 </div>
                             </div>
                         </div>
@@ -460,6 +476,11 @@ $current_page = 'form_penilaian.php';
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tanggal Penilaian <span class="text-danger">*</span></label>
+                        <input type="date" name="tanggal_penilaian" class="form-control" value="<?= htmlspecialchars($selected_tanggal) ?>" required>
+                        <small class="text-muted">Tanggal penilaian berlaku untuk semua role (admin, pejabat, penilai).</small>
                     </div>
                 </div>
                 <div class="modal-footer">

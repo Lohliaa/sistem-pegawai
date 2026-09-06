@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // File: includes/sidebar.php
 // Sidebar terpusat untuk konsistensi semua halaman
 // Cara pakai: sertakan file ini di dalam <body> halaman masing-masing
@@ -113,6 +113,12 @@ $role = $_SESSION['role'] ?? '';
         </a>
         <a href="setup_users.php" class="<?= $current_page == 'setup_users.php' ? 'active' : '' ?>">
             <i class="bi bi-file-earmark-spreadsheet"></i> Manajemen User
+        </a>
+        <a href="data_mou.php" class="<?= $current_page == 'data_mou.php' ? 'active' : '' ?>">
+            <i class="bi bi-file-earmark-ruled"></i> Data MOU
+        </a>
+        <a href="data_sk.php" class="<?= $current_page == 'data_sk.php' ? 'active' : '' ?>">
+            <i class="bi bi-file-earmark-text"></i> Data SK
         </a>
     <?php endif; ?>
 

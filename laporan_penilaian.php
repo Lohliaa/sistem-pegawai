@@ -39,8 +39,13 @@ if ($res) {
         $key = $r['pegawai_id'] . '_' . $r['periode_id'];
         $laporan[$key]['info'] = ['pegawai_id' => $r['pegawai_id'], 'nama_pegawai' => $r['nama_pegawai'], 'jabatan_pegawai' => $r['jabatan_pegawai'], 'status_kepegawaian' => $r['status_kepegawaian'], 'nama_pejabat' => $r['nama_pejabat'], 'jabatan_pejabat' => $r['jabatan_pejabat'], 'nama_kuartal' => $r['nama_kuartal'], 'periode_bulan' => $r['periode_bulan'], 'tahun' => $r['tahun']];
         $laporan[$key]['nilai'][$r['nama_kolom']] = $r;
+        // Collect semua tanggal_penilaian per group untuk sync
+        if (!isset($laporan[$key]['_tgl'])) $laporan[$key]['_tgl'] = [];
+        if (!empty($r['tanggal_penilaian'])) $laporan[$key]['_tgl'][] = $r['tanggal_penilaian'];
     }
 }
+// Sync tanggal_penilaian per group ke MAX (sinkron dengan form_penilaian)
+foreach ($laporan as $_k => $_lp) { if (!empty($_lp['_tgl'])) { sort($_lp['_tgl']); $laporan[$_k]['info']['tanggal_penilaian'] = end($_lp['_tgl']); } unset($laporan[$_k]['_tgl']); }
 $current_page = 'laporan_penilaian.php';
 ?>
 
@@ -165,10 +170,23 @@ $current_page = 'laporan_penilaian.php';
                                 <p class="text-muted mt-2">Tidak ada data laporan<?= $is_admin ? '' : ' Anda' ?>.</p>
                             </div>
                         </div>
+                    <?php
+                        // Query string untuk filter aktif (untuk export bulk)
+                        $qs = http_build_query(array_filter([
+                            'pegawai_id' => $filter_pegawai_id,
+                            'periode_id' => $filter_periode_id,
+                            'pejabat_id' => $filter_pejabat_id
+                        ]));
+                        ?>
                     <?php else: ?>
                         <div class="card shadow-sm lp">
-                            <div class="card-header bg-primary text-white py-2">
-                                <h6 class="mb-0"><i class="bi bi-list-ul"></i> Daftar Laporan Anda</h6>
+                            <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center no-print">
+                                <h6 class="mb-0"><i class="bi bi-list-ul"></i> Daftar Laporan<?= $is_admin ? '' : ' Anda' ?></h6>
+                                <div>
+                                    <a href="laporan_penilaian_export.php?action=excel&<?= $qs ?? "" ?>" class="btn btn-sm btn-success"><i class="bi bi-file-excel"></i> Excel</a>
+                                    <a href="laporan_penilaian_export.php?action=pdf&<?= $qs ?? "" ?>" class="btn btn-sm btn-danger" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+                                    <button onclick="printBulk()" class="btn btn-sm btn-light"><i class="bi bi-printer"></i> Print</button>
+                                </div>
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
@@ -180,6 +198,7 @@ $current_page = 'laporan_penilaian.php';
                                                 <th>Jabatan</th>
                                                 <th>Periode</th>
                                                 <th>Pejabat Penilai</th>
+                                                <th class="text-center" width="100">Tgl Penilaian</th>
                                                 <th class="text-center" width="80">Total</th>
                                                 <th class="text-center" width="80">Rata-rata</th>
                                                 <th class="text-center" width="100">Aksi</th>
@@ -206,6 +225,7 @@ $current_page = 'laporan_penilaian.php';
                                                     <td><?= htmlspecialchars($info['jabatan_pegawai'] ?? '-') ?></td>
                                                     <td><?= htmlspecialchars($info['nama_kuartal'] ?? '') ?> <?= htmlspecialchars($info['periode_bulan'] ?? '') ?> <?= $info['tahun'] ?? '' ?></td>
                                                     <td><?= htmlspecialchars($info['nama_pejabat'] ?? '-') ?><br><small class="text-muted"><?= htmlspecialchars($info['jabatan_pejabat'] ?? '') ?></small></td>
+                                                    <td class="text-center"><?= !empty($info['tanggal_penilaian']) ? date('d-m-Y', strtotime($info['tanggal_penilaian'])) : '<span class="text-muted">-</span>' ?></td>
                                                     <td class="text-center"><span class="badge bg-primary"><?= $total ?></span></td>
                                                     <td class="text-center"><span class="badge bg-warning text-dark"><?= $rata ?></span></td>
                                                     <td class="text-center">
@@ -224,7 +244,8 @@ $current_page = 'laporan_penilaian.php';
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function printBulk(){var qs='<?=http_build_query(array_filter(['pegawai_id'=>$filter_pegawai_id,'periode_id'=>$filter_periode_id,'pejabat_id'=>$filter_pejabat_id]))?>';window.open('laporan_penilaian_export.php?action=pdf&'+qs+'&print=1','_blank');}</script>
 </body>
-
 </html>
 </div>
