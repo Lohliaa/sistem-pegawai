@@ -222,12 +222,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
             $users_created = 0;
             $pegawai_created = 0;
 
-            if (($handle = fopen($file, "r")) !== FALSE) {
-                // Skip header
-                fgetcsv($handle, 1000, ",");
-
-                while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                    $num = count($data);
+            // Untuk file Excel (.xls/.xlsx), gunakan PhpSpreadsheet
+            if ($extension == 'xls' || $extension == 'xlsx') {
+                try {
+                    require_once __DIR__ . '/vendor/autoload.php';
+                    
+                    // Deteksi tipe file berdasarkan magic bytes
+                    if (!file_exists($file) || !is_readable($file)) { throw new Exception('File tidak dapat dibaca.'); }
+                    $fh = fopen($file, 'rb');
+                    if (!$fh) { throw new Exception('Tidak dapat membuka file.'); }
+                    $sig = fread($fh, 12);
+                    fclose($fh);
+                    
+                    if (substr($sig, 0, 2) === 'PK') {
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+                    } elseif (substr($sig, 0, 4) === "\xD0\xCF\x11\xE0") {
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xls();
+                    } else {
+                        $content = file_get_contents($file);
+                        if (trim($content) === '' || strlen($content) < 10) { throw new Exception('File kosong atau tidak valid.'); }
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+                        $reader->setInputEncoding('UTF-8');
+                    }
+                    
+                    $spreadsheet = $reader->load($file);
+                    $sheet = $spreadsheet->getActiveSheet();
+                    $allRows = $sheet->toArray();
+                    
+                    // Skip header
+                    $firstRow = true;
+                    foreach ($allRows as $data) {
+                        if ($firstRow) { $firstRow = false; continue; }
+                        $row++;
+                        $num = count($data);
                     // Minimal 3 kolom: username, password, role
                     if ($num >= 3) {
                         $username = mysqli_real_escape_string($conn, trim($data[0]));
@@ -292,9 +319,85 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
                     } else {
                         $errors[] = "Baris $row: Data tidak lengkap (minimal 3 kolom)!";
                     }
-                    $row++;
+                    }
+                } catch (Exception $e) {
+                    $errors[] = "Error membaca file Excel: " . $e->getMessage();
                 }
-                fclose($handle);
+            } elseif ($extension == 'csv') {
+                if (($handle = fopen($file, "r")) !== FALSE) {
+                    // Skip header
+                    fgetcsv($handle, 1000, ",");
+
+                    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                        $num = count($data);
+                        // Minimal 3 kolom: username, password, role
+                        if ($num >= 3) {
+                            $username = mysqli_real_escape_string($conn, trim($data[0]));
+                            $password_input = trim($data[1] ?? '123456');
+                            $password = md5($password_input);
+                            $role = mysqli_real_escape_string($conn, trim($data[2] ?? 'staf'));
+
+                            // Data pegawai opsional
+                            $nama = isset($data[3]) ? mysqli_real_escape_string($conn, trim($data[3])) : '';
+                            $tempat = isset($data[4]) ? mysqli_real_escape_string($conn, trim($data[4])) : '';
+                            $tanggal_lahir = isset($data[5]) ? mysqli_real_escape_string($conn, trim($data[5])) : '';
+                            $alamat = isset($data[6]) ? mysqli_real_escape_string($conn, trim($data[6])) : '';
+                            $jabatan = isset($data[7]) ? mysqli_real_escape_string($conn, trim($data[7])) : '';
+                            $golongan = isset($data[8]) ? mysqli_real_escape_string($conn, trim($data[8])) : '';
+                            $status_kepegawaian = isset($data[9]) ? mysqli_real_escape_string($conn, trim($data[9])) : '';
+                            $masa_kerja = isset($data[10]) ? mysqli_real_escape_string($conn, trim($data[10])) : '';
+                            $unit = isset($data[11]) ? mysqli_real_escape_string($conn, trim($data[11])) : '';
+
+                            // Validasi username
+                            if (empty($username)) {
+                                $errors[] = "Baris $row: Username kosong!";
+                                $row++;
+                                continue;
+                            }
+
+                            // Konversi tanggal
+                            if (!empty($tanggal_lahir) && strpos($tanggal_lahir, '/') !== false) {
+                                $parts = explode('/', $tanggal_lahir);
+                                if (count($parts) == 3) {
+                                    $tanggal_lahir = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+                                }
+                            }
+
+                            // Cek username sudah ada
+                            $check = $conn->query("SELECT id FROM users WHERE username = '$username'");
+                            if ($check->num_rows > 0) {
+                                $errors[] = "Baris $row: Username '$username' sudah digunakan!";
+                                $row++;
+                                continue;
+                            }
+
+                            // Insert user
+                            $query = "INSERT INTO users (username, password, role) VALUES ('$username', '$password', '$role')";
+                            if ($conn->query($query)) {
+                                $user_id = $conn->insert_id;
+                                $users_created++;
+
+                                // Jika ada data pegawai, insert juga
+                                if (!empty($nama)) {
+                                    $query = "INSERT INTO pegawai (user_id, nama, tempat, tanggal_lahir, alamat, jabatan, golongan, status_kepegawaian, masa_kerja, unit, role) 
+                                              VALUES ($user_id, '$nama', '$tempat', '$tanggal_lahir', '$alamat', '$jabatan', '$golongan', '$status_kepegawaian', '$masa_kerja', '$unit', '$role')";
+                                    if ($conn->query($query)) {
+                                        $pegawai_created++;
+                                    } else {
+                                        $errors[] = "Baris $row: Gagal insert pegawai - " . $conn->error;
+                                    }
+                                }
+                                $imported++;
+                            } else {
+                                $errors[] = "Baris $row: Gagal insert user - " . $conn->error;
+                            }
+                        } else {
+                            $errors[] = "Baris $row: Data tidak lengkap (minimal 3 kolom)!";
+                        }
+                        $row++;
+                    }
+                    fclose($handle);
+                }
             }
 
             // Pesan hasil import
@@ -832,7 +935,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
         function deleteUser(userId, username, hasPegawai) {
             let message = `Apakah Anda yakin ingin menghapus user "${username}"?`;
             if (hasPegawai) {
-                message += '\n\n⚠️ Data pegawai yang terhubung juga akan ikut terhapus!';
+                message += '\n\nâš ï¸ Data pegawai yang terhubung juga akan ikut terhapus!';
             }
 
             Swal.fire({
@@ -857,3 +960,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_user'])) {
 </body>
 
 </html>
+

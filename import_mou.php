@@ -26,7 +26,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_excel'])) {
         else {
             try {
                 require_once __DIR__ . '/vendor/autoload.php';
-                $reader = IOFactory::createReaderForFile($file['tmp_name']);
+                
+                // Validasi file ada dan bisa dibaca
+                if (!file_exists($file['tmp_name']) || !is_readable($file['tmp_name'])) {
+                    throw new Exception('File tidak dapat dibaca. Pastikan file tidak corrupt.');
+                }
+                
+                // Baca magic bytes untuk deteksi format
+                $handle = fopen($file['tmp_name'], 'rb');
+                if (!$handle) {
+                    throw new Exception('Tidak dapat membuka file.');
+                }
+                $bytes = fread($handle, 12);
+                fclose($handle);
+                
+                // Deteksi format berdasarkan magic bytes
+                $isPK = substr($bytes, 0, 2) === 'PK';
+                $isOLE = substr($bytes, 0, 4) === "\xD0\xCF\x11\xE0";
+                
+                // Gunakan reader berdasarkan format yang terdeteksi
+                if ($isPK) {
+                    $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+                } elseif ($isOLE) {
+                    $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xls();
+                } else {
+                    // Default: CSV atau text file
+                    $content = file_get_contents($file['tmp_name']);
+                    if (trim($content) === '' || strlen($content) < 10) {
+                        throw new Exception('File kosong atau tidak valid.');
+                    }
+                    $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+                    $reader->setInputEncoding('UTF-8');
+                }
+                
                 $spreadsheet = $reader->load($file['tmp_name']);
                 $sheet = $spreadsheet->getActiveSheet();
                 $rows = $sheet->toArray();

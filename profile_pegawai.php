@@ -234,12 +234,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_excel'])) {
             $errors = [];
             $users_created = 0;
 
-            if (($handle = fopen($file, "r")) !== FALSE) {
-                fgetcsv($handle, 1000, ",");
-
-                while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                    $num = count($data);
-                    if ($num >= 10) {
+            // Untuk file Excel (.xls/.xlsx), gunakan PhpSpreadsheet
+            if ($extension == 'xls' || $extension == 'xlsx') {
+                try {
+                    require_once __DIR__ . '/vendor/autoload.php';
+                    if (!file_exists($file) || !is_readable($file)) { throw new Exception('File tidak dapat dibaca.'); }
+                    $fh = fopen($file, 'rb');
+                    if (!$fh) { throw new Exception('Tidak dapat membuka file.'); }
+                    $sig = fread($fh, 12);
+                    fclose($fh);
+                    if (substr($sig, 0, 2) === 'PK') {
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+                    } elseif (substr($sig, 0, 4) === "\xD0\xCF\x11\xE0") {
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xls();
+                    } else {
+                        $content = file_get_contents($file);
+                        if (trim($content) === '' || strlen($content) < 10) { throw new Exception('File kosong atau tidak valid.'); }
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+                        $reader->setInputEncoding('UTF-8');
+                    }
+                    $spreadsheet = $reader->load($file);
+                    $sheet = $spreadsheet->getActiveSheet();
+                    $allRows = $sheet->toArray();
+                    $firstRow = true;
+                    foreach ($allRows as $data) {
+                        if ($firstRow) { $firstRow = false; continue; }
+                        $row++;
+                        $num = count($data);
+                        if ($num >= 10) {
                         $nama = mysqli_real_escape_string($conn, trim($data[0]));
                         $tempat = mysqli_real_escape_string($conn, trim($data[1] ?? ''));
                         $tanggal_lahir = mysqli_real_escape_string($conn, trim($data[2] ?? ''));
@@ -278,10 +300,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_excel'])) {
                                 $errors[] = "Baris " . $row . ": " . $conn->error;
                             }
                         }
+                        }
                     }
-                    $row++;
+                } catch (Exception $e) {
+                    $errors[] = "Error: " . $e->getMessage();
                 }
-                fclose($handle);
+            } elseif ($extension == 'csv') {
+                if (($handle = fopen($file, "r")) !== FALSE) {
+                    fgetcsv($handle, 1000, ",");
+                    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                        $num = count($data);
+                        if ($num >= 10) {
+                            $nama = mysqli_real_escape_string($conn, trim($data[0]));
+                            $tempat = mysqli_real_escape_string($conn, trim($data[1] ?? ''));
+                            $tanggal_lahir = mysqli_real_escape_string($conn, trim($data[2] ?? ''));
+                            $alamat = mysqli_real_escape_string($conn, trim($data[3] ?? ''));
+                            $jabatan = mysqli_real_escape_string($conn, trim($data[4] ?? ''));
+                            $golongan = mysqli_real_escape_string($conn, trim($data[5] ?? ''));
+                            $jenis_kelamin = mysqli_real_escape_string($conn, trim($data[6] ?? ''));
+                            $status_kepegawaian = mysqli_real_escape_string($conn, trim($data[7] ?? ''));
+                            $masa_kerja = mysqli_real_escape_string($conn, trim($data[8] ?? ''));
+                            $unit = mysqli_real_escape_string($conn, trim($data[9] ?? ''));
+                            $role = isset($data[10]) ? mysqli_real_escape_string($conn, trim($data[10])) : 'staf';
+                            if (strpos($tanggal_lahir, '/') !== false) {
+                                $parts = explode('/', $tanggal_lahir);
+                                if (count($parts) == 3) { $tanggal_lahir = $parts[2] . '-' . $parts[1] . '-' . $parts[0]; }
+                            }
+                            if ($nama && $tanggal_lahir && $unit) {
+                                $username = strtolower(str_replace(' ', '', $nama));
+                                $result = createUser($conn, $username, $role, '123456');
+                                $user_id = 0;
+                                if ($result['success']) { $user_id = $result['user_id']; $users_created++; }
+                                $query = "INSERT INTO pegawai (user_id, nama, tempat, tanggal_lahir, alamat, jabatan, golongan, jenis_kelamin, status_kepegawaian, masa_kerja, unit, role) VALUES (NULLIF($user_id, 0), '$nama', '$tempat', '$tanggal_lahir', '$alamat', '$jabatan', '$golongan', '$jenis_kelamin', '$status_kepegawaian', '$masa_kerja', '$unit', '$role')";
+                                if ($conn->query($query)) { $imported++; } else { $errors[] = "Baris " . $row . ": " . $conn->error; }
+                            }
+                        }
+                        $row++;
+                    }
+                    fclose($handle);
+                }
             }
 
             if ($imported > 0) {
@@ -611,13 +668,18 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Nama</th>
                                 <th>Username</th>
+                                <th>Password</th>
+                                <th>Role</th>
+                                <th>Nama</th>
+                                <th>Tempat Lahir</th>
+                                <th>Tanggal Lahir</th>
+                                <th>Alamat</th>
                                 <th>Jabatan</th>
                                 <th>Golongan</th>
-                                <th>Status</th>
+                                <th>Status Kepegawaian</th>
+                                <th>Masa Kerja</th>
                                 <th>Unit</th>
-                                <th>Role</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -625,16 +687,15 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
                             <?php
                             $no = 1;
                             $result = $conn->query("
-                                SELECT p.*, u.username 
-                                FROM pegawai p 
-                                LEFT JOIN users u ON p.user_id = u.id 
+                                SELECT p.*, u.username, u.password
+                                FROM pegawai p
+                                LEFT JOIN users u ON p.user_id = u.id
                                 ORDER BY p.nama
                             ");
                             while ($row = $result->fetch_assoc()):
                             ?>
                                 <tr>
                                     <td><?= $no++ ?></td>
-                                    <td><strong><?= htmlspecialchars($row['nama']) ?></strong></td>
                                     <td>
                                         <?php if ($row['username']): ?>
                                             <span class="badge bg-success"><i class="bi bi-check-circle"></i> <?= htmlspecialchars($row['username']) ?></span>
@@ -642,6 +703,30 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
                                             <span class="badge bg-secondary">Tidak ada akun</span>
                                         <?php endif; ?>
                                     </td>
+                                    <td>
+                                        <?php if (!empty($row['password'])): ?>
+                                            <span class="badge bg-secondary"><i class="bi bi-key"></i> â—â—â—â—â—â—â—</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-light text-dark">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<?=
+                                                                $row['role'] == 'admin' ? 'danger' : ($row['role'] == 'kanit' ? 'warning' : ($row['role'] == 'kabid' ? 'info' : ($row['role'] == 'staf' ? 'success' : 'dark')))
+                                                                ?>">
+                                            <?= htmlspecialchars(strtoupper($row['role'] ?? 'N/A')) ?>
+                                        </span>
+                                    </td>
+                                    <td><strong><?= htmlspecialchars($row['nama']) ?></strong></td>
+                                    <td><?= htmlspecialchars($row['tempat'] ?? '-') ?></td>
+                                    <td>
+                                        <?php if (!empty($row['tanggal_lahir']) && $row['tanggal_lahir'] != '0000-00-00'): ?>
+                                            <?= date('d/m/Y', strtotime($row['tanggal_lahir'])) ?>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($row['alamat'] ?? '-') ?></td>
                                     <td><span class="badge bg-info"><?= htmlspecialchars($row['jabatan']) ?></span></td>
                                     <td><span class="badge bg-warning text-dark"><?= htmlspecialchars($row['golongan']) ?></span></td>
                                     <td>
@@ -651,14 +736,8 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
                                             <?= htmlspecialchars($row['status_kepegawaian']) ?>
                                         </span>
                                     </td>
+                                    <td><?= htmlspecialchars($row['masa_kerja'] ?? '-') ?></td>
                                     <td><span class="badge bg-secondary"><?= htmlspecialchars($row['unit']) ?></span></td>
-                                    <td>
-                                        <span class="badge bg-<?=
-                                                                $row['role'] == 'admin' ? 'danger' : ($row['role'] == 'kanit' ? 'warning' : ($row['role'] == 'kabid' ? 'info' : ($row['role'] == 'staf' ? 'success' : 'dark')))
-                                                                ?>">
-                                            <?= htmlspecialchars(strtoupper($row['role'] ?? 'N/A')) ?>
-                                        </span>
-                                    </td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="?edit=<?= $row['id'] ?>" class="btn btn-warning btn-action btn-sm" title="Edit" data-bs-toggle="tooltip">
@@ -981,7 +1060,7 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
                 },
                 "pageLength": 10,
                 "order": [
-                    [1, "asc"]
+                    [4, "asc"]
                 ]
             });
 
@@ -1102,3 +1181,4 @@ $total_perempuan = $conn->query("SELECT COUNT(*) as total FROM pegawai WHERE jen
 </body>
 
 </html>
+

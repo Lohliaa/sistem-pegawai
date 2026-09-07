@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once 'config/database.php';
 if (!isset($_SESSION['user_id'])) { header('Location: login.php'); exit(); }
@@ -27,7 +27,12 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_FILES['file_excel'])) {
         else{
             try{
                 require_once __DIR__.'/vendor/autoload.php';
-                $reader=IOFactory::createReaderForFile($file['tmp_name']);
+                $handle=fopen($file['tmp_name'],'rb');
+                $bytes=fread($handle,8);
+                fclose($handle);
+                if(substr($bytes,0,2)==='PK'){$reader=new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();}
+                elseif(substr($bytes,0,4)==="\xD0\xCF\x11\xE0"){$reader=new \PhpOffice\PhpSpreadsheet\Reader\Xls();}
+                else{$reader=new \PhpOffice\PhpSpreadsheet\Reader\Csv();$reader->setInputEncoding('UTF-8');}
                 $spreadsheet=$reader->load($file['tmp_name']);
                 $sheet=$spreadsheet->getActiveSheet();
                 $rows=$sheet->toArray();
@@ -142,3 +147,5 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_FILES['file_excel'])) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+
